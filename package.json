@@ -1,0 +1,14 @@
+{
+  "name": "seo-text-skill",
+  "version": "0.1.4",
+  "private": true,
+  "description": "Standalone Claude skill: Serpstat → crawl → seo-bundle pipeline → SEO text → self-check.",
+  "dependencies": {
+    "@mozilla/readability": "^0.6.0",
+    "dictionary-ru": "^3.0.0",
+    "dictionary-uk": "^4.0.0",
+    "jsdom": "^29.1.1",
+    "nspell": "^2.1.5",
+    "snowball-stemmers": "^0.6.0"
+  }
+}
