@@ -238,10 +238,29 @@ async function main() {
     } catch (e) { diag.errors.push('langfilter: ' + String((e && e.message) || e)); }
   }
 
-  // 5) Сборка tz для ecomprompt: частоты ключей из пула, объём — целевой збп/слова
-  // (или переопределённый доп. пожеланием), доп. требования и схемы заказчика.
   const volByKw = new Map(group.map((g) => [norm(g.keyword), g.volume]));
   const keywords = (tz0.keywords || []).map((k) => ({ keyword: k.keyword, volume: volByKw.get(norm(k.keyword)) }));
+
+  // 4.2) Перелинковка из карты сайта пользователя: разделы/бренды, релевантные
+  // теме (слаг пересекается по основам с ключами/LSI/заголовками конкурентов) →
+  // кандидаты внутренних ссылок для раздела 13 промпта. --links "…" перекрывает,
+  // --no-links отключает.
+  let links = a.links ? String(a.links) : '';
+  if (!links && !a['no-links'] && a.site) {
+    try {
+      const { collectSiteUrls, pickInternalLinks } = require(path.join(LIB, 'sitemap'));
+      const siteUrls = await collectSiteUrls(a.site, { ua: BROWSER_UA });
+      const headingWords = (res.pagesMeta || []).flatMap((m) => (m.headings || []).map((h) => h.text));
+      const vocab = [category, ...keywords.map((k) => k.keyword), ...lsi,
+        ...(tz0.competitorPhrases || []).map((p) => (typeof p === 'string' ? p : p.phrase)), ...headingWords];
+      const picks = pickInternalLinks(siteUrls, vocab, { limit: 8, prefer: lang === 'ru' ? '/ru/' : '' });
+      links = picks.map((p) => `${p.url} — ${p.anchor}`).join('\n');
+      diag.internalLinks = { siteUrls: siteUrls.length, picked: picks.length, anchors: picks.map((p) => p.anchor) };
+    } catch (e) { diag.errors.push('sitemap: ' + String((e && e.message) || e)); }
+  }
+
+  // 5) Сборка tz для ecomprompt: частоты ключей из пула, объём — целевой збп/слова
+  // (или переопределённый доп. пожеланием), ссылки перелинковки, доп. требования.
   const tz = {
     pageType, lang,
     topic: category,
@@ -253,6 +272,7 @@ async function main() {
     lsi,
     competitorPhrases: tz0.competitorPhrases || [],
     competitorHeadings: competitorHeadingsText(res.pagesMeta || []),
+    links,
     volumeZbp: ovZbp || res.zbpTarget || '',
     requirements: { volume: ovWords || (res.volume && res.volume.words) || '' },
     extra,
