@@ -1,6 +1,6 @@
 {
   "name": "seo-text-skill",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "private": true,
   "description": "Standalone Claude skill: Serpstat → crawl → seo-bundle pipeline → SEO text → self-check.",
   "dependencies": {
